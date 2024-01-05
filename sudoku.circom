@@ -24,4 +24,41 @@ template Distinct(n) {
     }
 }
 
+// Enforce that the inputs fits in 4 bits, 
+// which means 0 <= input < 16.
+template Bits4() {
+    signal input in;
+    // The signal for the 4-bit decomposition of `in`
+    signal bits[4];
+    var bitsum = 0;
+
+    for (var i = 0; i < 4; i++) {
+        // The following assignment cannot be included
+        // in a constraint since is not rank 1.
+        //
+        // This operation takes the i-th bit from the right
+        bits[i] <-- (in >> i) & 1;
+        // This is the constraint for the operation above
+        bits[i] * (bits[i] - 1) === 0;
+        bitsum = bitsum + 2 ** i * bits[i];
+    }
+
+    // The input is in the range if it equals the bit sum 
+    // of its 4-bit decomposition
+    bitsum === in;
+}
+
+// Enforce that the input satisfies 1 <= input <= 9
+template OneToNine() {
+  signal input in;
+
+  component lowerBound = Bits4();
+  component upperBound = Bits4();
+
+  // if `in` is zero, then `in - 1` overflows and this constraint fails
+  lowerBound.in <== in - 1;
+  // if `in <= 9`, then `in + 6 <= 15`
+  upperBound.in <== in + 6;
+}
+
 component main = NonEqual();
