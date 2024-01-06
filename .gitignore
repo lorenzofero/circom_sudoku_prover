@@ -1,1 +1,7 @@
 *.r1cs
+
+# All the files output of `make`
+sudoku*
+!sudoku.circom
+!sudoku.input.json
+
