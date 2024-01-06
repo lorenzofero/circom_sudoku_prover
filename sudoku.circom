@@ -61,4 +61,63 @@ template OneToNine() {
   upperBound.in <== in + 6;
 }
 
-component main = NonEqual();
+template Sudoku() {
+  var n = 9;
+
+  signal input solution[n][n];
+  // In the puzzle we have as a convention that zero indicates a blank spot
+  signal input puzzle[n][n];
+
+  // Ensure that each solution is in-range
+  component inRange[n][n];
+  for (var i = 0; i < n; i++) {
+      for (var j = 0; j < n; j++) {
+        inRange[i][j] = OneToNine();
+        inRange[i][j].in <== solution[i][j];
+      }
+  }
+
+  // Ensure that puzzle and solution agree.
+  for (var i = 0; i < n; i++) {
+      for (var j = 0; j < n; j++) {
+        // Given that we're in Z/p with a high p, this is zero
+        // iff one of the factors is zero which is what we want.
+        puzzle[i][j] * (puzzle[i][j] - solution[i][j]) === 0;
+      }
+  }
+
+  // Ensure uniqueness in rows.
+  component distinctRows[n];
+  for (var i = 0; i < n; i++) {
+      distinctRows[i] = Distinct(n);
+      for (var j = 0; j < n; j++) {
+        distinctRows[i].in[j] <== solution[i][j];
+      } 
+  }
+
+  // Ensure uniqueness in columns.
+  component distinctColumns[n];
+  for (var i = 0; i < n; i++) {
+      distinctColumns[i] = Distinct(n);
+      for (var j = 0; j < n; j++) {
+        distinctColumns[i].in[j] <== solution[i][j];
+      } 
+  }
+
+  // Ensure uniqueness in each 3x3 grid.
+  component distinctGrids[n];
+  for (var i = 0; i < n; i += 3) {
+      for (var j = 0; j < n; j += 3) {
+          var idx = i + (j / 3);
+          distinctGrids[idx] = Distinct(9);
+          for (var k = i; k < i + 3; k++) {
+            for (var l = j; l < j + 3; l++) {
+              var innerIdx = (k % 3) * 3 + (l % 3);
+              distinctGrids[idx].in[innerIdx] <== solution[k][l];
+            }
+          }
+      }
+  }
+}
+
+component main {public [puzzle]} = Sudoku();
